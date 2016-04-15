@@ -1,13 +1,13 @@
-//Script to take a class schedule, add it to a calendar and create a form for attendees to register
+//Script to take a class schedule, and volunteers and add then to a google calendar
 
 //FUNCTION to add a custom menu when the spreadsheet is opened
 function onOpen() {
   var sheet = SpreadsheetApp.getActiveSpreadsheet();
   var menuEntries = [];  
   menuEntries.push({name: "Getting started", functionName: "getStart"});
-  menuEntries.push({name: "Add calendar data", functionName: "addData"});
-  menuEntries.push({name: "Create Calendar", functionName: "createCalendar"});
-  menuEntries.push({name: "Reset Calendar", functionName: "resetCalendar"});
+  menuEntries.push({name: "Add data", functionName: "addData"});
+  menuEntries.push({name: "Create calendar", functionName: "createCalendar"});
+  menuEntries.push({name: "Reset calendar", functionName: "resetCalendar"});
   sheet.addMenu("SAKG Classes", menuEntries);  
 }
 
@@ -16,7 +16,7 @@ function getStart() {
   var html = HtmlService.createHtmlOutputFromFile('Index')
       .setSandboxMode(HtmlService.SandboxMode.IFRAME);
   SpreadsheetApp.getUi()
-      .showModalDialog(html, 'Welcome to the SAKG Roster Management calendar');
+      .showModalDialog(html, 'Welcome to the SAKG roster management calendar');
 }
 
 
@@ -42,7 +42,7 @@ function listCalendars() {
 }
 
 
-//FUNCTION to populate Raw Data with events list
+//FUNCTION to populate your Google calendar with your SAKG sessions and volunteers
 function addData() {
 
   //create Raw Data sheet first
@@ -66,66 +66,49 @@ function addData() {
 }  
 
 
-//FUNCTION to push new events to calendar
+//FUNCTION to populate your Google calendar with your SAKG sessions and volunteers
 function createCalendar() {
   
-  //export volunteers to Raw Data sheet
+  //get session and volunteer data
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName("volunteers");
   var data = sheet.getDataRange().getValues();
   var destination = ss.getSheetByName("Raw Data")
   var rawData = destination.getDataRange().getValues();
 
-  //get list of sessions
-  var sessionList = [];
-  for(n in data){
-    var session = data[n][0];
-    var duplicate = false;
-    for (j in sessionList){
-      if(session == sessionList[j]){
-        duplicate = true;
-      }
-    }
-    if(!duplicate){
-      sessionList.push(session);
-    }
-  }
-
-  //add volunteers for each session
-  for (n in sessionList) {
+  //export volunteers to Raw Data sheet 
+  for (n in rawData) {
     var volunteers = [];
+    var check = 0;
     for (i in data){
-      if (sessionList[n] == data[i][0]){
-        volunteers.push(data[i][1]);
-      }
+        if (data[i][0] == rawData[n][1] && data[i][5].toString() == rawData[n][3].toString()) {
+        volunteers.push(data[i][2] + " " + data[i][3]);
+        }
     }
-      for (j in rawData) {
-        Logger.log(sessionList[n]);
-        Logger.log(rawData[j][0]);
-        if (sessionList[n] == rawData[j][0]){
-          var sessionVolunteers = volunteers.join(', ');
-          h = Number(j) + 1;
-          destination.getRange(h,8).setValue(sessionVolunteers);
-      }
-    }
+    var sessionVolunteers = volunteers.join(', ');
+    h = Number(n) + 1;
+    destination.getRange(h,7).setValue(sessionVolunteers);    
   }
-
   
-  //spreadsheet variables
+  //push volunteers back to SAKG Classes list
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName("Raw Data");
-  var range = sheet.getDataRange();
-  var values = range.getValues();    
-  
-  //calendar variables
+  var destination = ss.getSheetByName("SAKG Classes")
+    
+  var volunteers = sheet.getRange(1,7,sheet.getMaxRows(),7);
+  volunteers.copyTo(destination.getRange(1,7));
+
+  //adding data to google calendars
+  var rawData = sheet.getDataRange().getValues();
+
   var calendar = CalendarApp.getCalendarById('q3kh2950cfha2i3n503qv8999o@group.calendar.google.com'); //input your calendar ID 
 
-  for (var i = 1; i < values.length; i++) {     
-    if (values[i][8] != 'Added') {                //to avoid duplicates, check if it's been entered before
-      var eventTitle = 'SAKG: ' + values[i][1] + ' - '+ values[i][2];
-      var eventDescription = {description: values[i][7]};
-      var start = values[i][3];
-      var end = values[i][4];
+  for (var i = 1; i < rawData.length; i++) {     
+    if (rawData[i][8] != 'Added') {                //to avoid duplicates, check if it's been entered before
+      var eventTitle = 'SAKG: ' + rawData[i][1] + ' - '+ rawData[i][2];
+      var eventDescription = {description: rawData[i][5]};
+      var start = rawData[i][3];
+      var end = rawData[i][4];
   
       var event = calendar.createEvent(eventTitle, start, end, eventDescription);
                 
@@ -133,8 +116,8 @@ function createCalendar() {
       var eventId = event.getId();
         
       //mark as entered, enter ID
-      sheet.getRange(i+1,9).setValue('Added');
-      sheet.getRange(i+1,10).setValue(eventId);
+      sheet.getRange(i+1,8).setValue('Added');
+      sheet.getRange(i+1,9).setValue(eventId);
       }
    }
 
@@ -142,14 +125,15 @@ function createCalendar() {
   var html = HtmlService.createHtmlOutputFromFile('Create Calendar')
       .setSandboxMode(HtmlService.SandboxMode.IFRAME);
   SpreadsheetApp.getUi()
-      .showModalDialog(html, 'SAKG Classes added to your Google calendar!');
+      .showModalDialog(html, 'Well done, you are finished!');
 }
+
 
 
 //FUNCTION to remove all events from calendar
 function resetCalendar() {
   
-  var fromDate = new Date(2015,0,1,0,0,0);
+  var fromDate = new Date();
   var toDate = new Date(2018,0,1,0,0,0);
   var calendar = CalendarApp.getCalendarById('q3kh2950cfha2i3n503qv8999o@group.calendar.google.com'); //input your calendar ID 
 
