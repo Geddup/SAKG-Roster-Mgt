@@ -63,6 +63,15 @@ function addData() {
     var count = n;
   rangeToCopy.copyTo(rawData.getRange(count, 1));  
   }
+
+  //Add modal window with step completed
+  var html = HtmlService.createHtmlOutputFromFile('Add data')
+      .setSandboxMode(HtmlService.SandboxMode.IFRAME);
+  SpreadsheetApp.getUi()
+      .showModalDialog(html, 'Step 1 - completed');
+
+
+
 }  
 
 
@@ -101,10 +110,10 @@ function createCalendar() {
   //adding data to google calendars
   var rawData = sheet.getDataRange().getValues();
 
-  var calendar = CalendarApp.getCalendarById('q3kh2950cfha2i3n503qv8999o@group.calendar.google.com'); //input your calendar ID 
+  var calendar = CalendarApp.getCalendarById('yourCalendarID@group.calendar.google.com'); //input your calendar ID 
 
   for (var i = 1; i < rawData.length; i++) {     
-    if (rawData[i][8] != 'Added') {                //to avoid duplicates, check if it's been entered before
+    if (rawData[i][7] != 'Added') {                //to avoid duplicates, check if it's been entered before
       var eventTitle = 'SAKG: ' + rawData[i][1] + ' - '+ rawData[i][2];
       var eventDescription = {description: rawData[i][5]};
       var start = rawData[i][3];
@@ -135,7 +144,7 @@ function resetCalendar() {
   
   var fromDate = new Date();
   var toDate = new Date(2018,0,1,0,0,0);
-  var calendar = CalendarApp.getCalendarById('q3kh2950cfha2i3n503qv8999o@group.calendar.google.com'); //input your calendar ID 
+  var calendar = CalendarApp.getCalendarById('yourCalendarID@group.calendar.google.com'); //input your calendar ID 
 
 // delete from Jan 1 to end of Jan 1, 2018
 
@@ -146,3 +155,5 @@ function resetCalendar() {
     ev.deleteEvent();
   }
 }
+
+
